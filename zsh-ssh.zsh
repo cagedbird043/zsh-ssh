@@ -123,7 +123,13 @@ _ssh_host_list() {
         if (key == "host") { aliases = value }
         if (key == "user") { user = value }
         if (key == "hostname") { host_name = value }
-        if (key == "#_desc") { desc = value }
+        if (key == "#_desc") {
+          if (desc == "") {
+            desc = value
+          } else {
+            desc = desc "\n" value
+          }
+        }
       }
 
       n_aliases = split(aliases, alias_list, " ")
@@ -160,7 +166,9 @@ _ssh_host_list() {
     END {
       for (a in alias_hn) {
         display = sprintf("%-28s %-18s %-12s", a, alias_hn[a], alias_user[a])
-        printf "%s\t%s\t%s\t%s\t%s\n", display, a, alias_hn[a], alias_user[a], alias_desc[a]
+        desc_out = alias_desc[a]
+        gsub(/\n/, "\034", desc_out)
+        printf "%s\t%s\t%s\t%s\t%s\n", display, a, alias_hn[a], alias_user[a], desc_out
       }
     }
   ')
@@ -211,7 +219,7 @@ _set_lbuffer() {
 }
 
 fzf_complete_ssh() {
-  local tokens cmd result key selection
+  local tokens cmd result key selection fzf_height fzf_preview_window
   setopt localoptions noshwordsplit noksh_arrays noposixbuiltins
 
   tokens=(${(z)LBUFFER})
@@ -222,6 +230,8 @@ fzf_complete_ssh() {
   elif [[ "$cmd" == "ssh" ]]; then
     result=$(_ssh_host_list ${tokens[2, -1]})
     fuzzy_input="${LBUFFER#"$tokens[1] "}"
+    fzf_height="${fzf_ssh_height:-55%}"
+    fzf_preview_window="${fzf_ssh_preview_window:-down:65%:wrap}"
 
     if [ -z "$result" ]; then
       # When host parameters exist, don't fall back to default completion to avoid slow hosts enumeration
@@ -239,7 +249,7 @@ fzf_complete_ssh() {
     fi
 
     result=$(_fzf_list_generator "$result" | fzf \
-      --height 40% \
+      --height "$fzf_height" \
       --ansi \
       --border \
       --cycle \
@@ -253,8 +263,8 @@ fzf_complete_ssh() {
       --query=$fuzzy_input \
       --no-separator \
       --bind 'shift-tab:up,tab:down,bspace:backward-delete-char/eof' \
-      --preview 'alias=$(printf "%s" {} | cut -f2); host=$(printf "%s" {} | cut -f3); user=$(printf "%s" {} | cut -f4); desc=$(printf "%s" {} | cut -f5-); printf "Alias: %s\nHostName: %s\nUser: %s\n" "$alias" "$host" "$user"; if [ -n "$desc" ]; then printf "Desc:\n%s\n\n" "$desc"; else printf "Desc:\n<none>\n\n"; fi; ssh -T -G "$alias" | grep -i -E "^User |^HostName |^Port |^ControlMaster |^ForwardAgent |^LocalForward |^IdentityFile |^RemoteForward |^ProxyCommand |^ProxyJump " | column -t' \
-      --preview-window=down:55%:wrap \
+      --preview 'alias=$(printf "%s" {} | cut -f2); host=$(printf "%s" {} | cut -f3); user=$(printf "%s" {} | cut -f4); desc=$(printf "%s" {} | cut -f5- | tr "\034" "\n"); printf "Desc:\n%s\n\n" "${desc:-<none>}"; printf "Target: ssh %s\nHostName: %s\nUser: %s\n" "$alias" "$host" "$user"; extra=$(ssh -T -G "$alias" | awk '\''BEGIN{IGNORECASE=1} /^(port|identityfile|proxyjump|proxycommand|controlmaster|forwardagent|localforward|remoteforward) / {print}'\'' | column -t 2>/dev/null); if [ -n "$extra" ]; then printf "\nSSH config:\n%s\n" "$extra"; fi' \
+      --preview-window="$fzf_preview_window" \
       --expect=alt-enter,enter
     )
 

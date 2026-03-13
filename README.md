@@ -98,9 +98,20 @@ fzf panel. If you add `#_Desc` to an SSH config entry, the full description is
 shown in the preview pane, so long notes remain readable even in a narrow
 terminal.
 
+You can add multiple `#_Desc` lines to the same host block. They will be joined
+as multiple lines in the preview pane.
+
+If you want to tune the popup size, set these variables before the plugin is
+loaded:
+
+```shell
+export fzf_ssh_height='60%'
+export fzf_ssh_preview_window='down:70%:wrap'
+```
+
 ### SSH Config Example
 
-You can use `#_Desc` to set description.
+You can use one or more `#_Desc` lines to set description.
 
 ~/.ssh/config
 
@@ -113,4 +124,5 @@ Host Development-Host
     Hostname 2.2.2.2
     IdentityFile ~/.ssh/development-host
     #_Desc For Development
+    #_Desc Private network only
 ```
