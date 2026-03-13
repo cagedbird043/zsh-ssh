@@ -4,8 +4,11 @@ Better host completion for ssh in Zsh.
 
 [![asciicast](https://asciinema.org/a/381405.svg)](https://asciinema.org/a/381405)
 
+Works on Linux and macOS.
+
 - [zsh-ssh](#zsh-ssh)
     - [Installation](#installation)
+        - [macOS Notes](#macos-notes)
         - [Zinit](#zinit)
         - [Antigen](#antigen)
         - [Oh My Zsh](#oh-my-zsh)
@@ -18,16 +21,27 @@ Better host completion for ssh in Zsh.
 
 Make sure you have [fzf](https://github.com/junegunn/fzf) installed.
 
+### macOS Notes
+
+- Install `fzf` first:
+
+  ```shell
+  brew install fzf
+  $(brew --prefix)/opt/fzf/install
+  ```
+
+- No extra `realpath` or `coreutils` dependency is required.
+
 ### Zinit
 
 ```shell
-zinit light sunlei/zsh-ssh
+zinit light cagedbird043/zsh-ssh
 ```
 
 ### Antigen
 
 ```shell
-antigen bundle sunlei/zsh-ssh
+antigen bundle cagedbird043/zsh-ssh
 ```
 
 ### Oh My Zsh
@@ -35,7 +49,7 @@ antigen bundle sunlei/zsh-ssh
 1. Clone this repository into `$ZSH_CUSTOM/plugins` (by default `~/.oh-my-zsh/custom/plugins`)
 
     ```shell
-    git clone https://github.com/sunlei/zsh-ssh ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-ssh
+    git clone https://github.com/cagedbird043/zsh-ssh ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-ssh
     ```
 
 2. Add the plugin to the list of plugins for Oh My Zsh to load (inside `~/.zshrc`):
@@ -52,7 +66,7 @@ antigen bundle sunlei/zsh-ssh
 
     ```toml
     [plugins.zsh-ssh]
-    github = 'sunlei/zsh-ssh'
+    github = 'cagedbird043/zsh-ssh'
     ```
 
 2. Run `sheldon lock` to install the plugin.
@@ -64,7 +78,7 @@ antigen bundle sunlei/zsh-ssh
 1. Clone this repository somewhere on your machine. For example: `~/.zsh/zsh-ssh`.
 
     ```shell
-    git clone https://github.com/sunlei/zsh-ssh ~/.zsh/zsh-ssh
+    git clone https://github.com/cagedbird043/zsh-ssh ~/.zsh/zsh-ssh
     ```
 
 2. Add the following to your `.zshrc`:
@@ -78,6 +92,11 @@ antigen bundle sunlei/zsh-ssh
 ## Usage
 
 Just press <kbd>Tab</kbd> after `ssh` command as usual.
+
+The host list stays compact by showing `Alias / Hostname / User` in the main
+fzf panel. If you add `#_Desc` to an SSH config entry, the full description is
+shown in the preview pane, so long notes remain readable even in a narrow
+terminal.
 
 ### SSH Config Example
 

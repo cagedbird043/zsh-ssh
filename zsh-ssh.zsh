@@ -17,7 +17,7 @@ _parse_config_file() {
   unsetopt nomatch
 
   # Resolve the full path of the input config file
-  local config_file_path=$(realpath "$1")
+  local config_file_path="${1:A}"
 
   # Read the file line by line
   while IFS= read -r line || [[ -n "$line" ]]; do
