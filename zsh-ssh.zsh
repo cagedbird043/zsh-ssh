@@ -103,16 +103,12 @@ _ssh_host_list() {
     {
       match_directive = ""
 
-      # Use spaces to ensure the column command maintains the correct number of columns.
-      #   - user
-      #   - desc_formated
-
       user = " "
       host_name = ""
       alias = ""
       aliases = ""
       desc = ""
-      desc_formated = " "
+      display = ""
 
       for (line_num = 1; line_num <= NF; ++line_num) {
         line = parse_line($line_num)
@@ -130,10 +126,6 @@ _ssh_host_list() {
         if (key == "#_desc") { desc = value }
       }
 
-      if (desc) {
-        desc_formated = sprintf("[\033[00;34m%s\033[0m]", desc)
-      }
-
       n_aliases = split(aliases, alias_list, " ")
       for (i = 1; i <= n_aliases; i++) {
         alias = alias_list[i]
@@ -145,10 +137,11 @@ _ssh_host_list() {
 
         # Per-alias aggregation: each field uses first-non-empty wins
         # Extra rule: explicit HostName takes precedence over fallback value
+        gsub(/\t/, " ", desc)
         if (!(alias in alias_hn)) {
           alias_hn[alias] = effective_hostname
           alias_user[alias] = user
-          alias_desc[alias] = desc_formated
+          alias_desc[alias] = desc
           if (host_name) alias_explicit_hn[alias] = 1
         } else {
           if (host_name && !alias_explicit_hn[alias]) {
@@ -158,15 +151,16 @@ _ssh_host_list() {
           if (user != " " && alias_user[alias] == " ") {
             alias_user[alias] = user
           }
-          if (desc_formated != " " && alias_desc[alias] == " ") {
-            alias_desc[alias] = desc_formated
+          if (desc != "" && alias_desc[alias] == "") {
+            alias_desc[alias] = desc
           }
         }
       }
     }
     END {
       for (a in alias_hn) {
-        printf "%s|->|%s|%s|%s\n", a, alias_hn[a], alias_user[a], alias_desc[a]
+        display = sprintf("%-28s %-18s %-12s", a, alias_hn[a], alias_user[a])
+        printf "%s\t%s\t%s\t%s\t%s\n", display, a, alias_hn[a], alias_user[a], alias_desc[a]
       }
     }
   ')
@@ -183,7 +177,7 @@ _ssh_host_list() {
   fi
   host_list=$(printf "%s\n" "$host_list" | command sort -u)
 
-  echo $host_list
+  printf "%s\n" "$host_list"
 }
 
 
@@ -196,14 +190,10 @@ _fzf_list_generator() {
     host_list=$(_ssh_host_list)
   fi
 
-  header="
-Alias|->|Hostname|User|Desc
-─────|──|────────|────|────
-"
+  header="Alias                        Hostname           User
+-----                        --------           ----"
 
-  host_list="${header}\n${host_list}"
-
-  echo $host_list | command column -t -s '|'
+  printf "%s\n%s\n" "$header" "$host_list"
 }
 
 _set_lbuffer() {
@@ -211,11 +201,10 @@ _set_lbuffer() {
   result="$1"
   is_fzf_result="$2"
 
-  if [ "$is_fzf_result" = false ] ; then
-    result=$(cut -f 1 -d "|" <<< ${result})
+  selected_host=$(printf "%s\n" "$result" | cut -f 2)
+  if [ -z "$selected_host" ]; then
+    selected_host=$(printf "%s\n" "$result" | awk '{print $1}')
   fi
-
-  selected_host=$(cut -f 1 -d " " <<< ${result})
   connect_cmd="ssh ${selected_host}"
 
   LBUFFER="$connect_cmd"
@@ -242,27 +231,30 @@ fzf_complete_ssh() {
       return
     fi
 
-    if [ $(echo $result | wc -l) -eq 1 ]; then
-      _set_lbuffer $result false
+    if [ "$(printf "%s\n" "$result" | wc -l)" -eq 1 ]; then
+      _set_lbuffer "$result" false
       zle reset-prompt
       # zle redisplay
       return
     fi
 
-    result=$(_fzf_list_generator $result | fzf \
+    result=$(_fzf_list_generator "$result" | fzf \
       --height 40% \
       --ansi \
       --border \
       --cycle \
+      --delimiter=$'\t' \
       --info=inline \
       --header-lines=2 \
+      --with-nth=1 \
+      --nth=1,2,3,4,5 \
       --reverse \
       --prompt='SSH Remote > ' \
       --query=$fuzzy_input \
       --no-separator \
       --bind 'shift-tab:up,tab:down,bspace:backward-delete-char/eof' \
-      --preview 'ssh -T -G $(cut -f 1 -d " " <<< {}) | grep -i -E "^User |^HostName |^Port |^ControlMaster |^ForwardAgent |^LocalForward |^IdentityFile |^RemoteForward |^ProxyCommand |^ProxyJump " | column -t' \
-      --preview-window=right:40% \
+      --preview 'alias=$(printf "%s" {} | cut -f2); host=$(printf "%s" {} | cut -f3); user=$(printf "%s" {} | cut -f4); desc=$(printf "%s" {} | cut -f5-); printf "Alias: %s\nHostName: %s\nUser: %s\n" "$alias" "$host" "$user"; if [ -n "$desc" ]; then printf "Desc:\n%s\n\n" "$desc"; else printf "Desc:\n<none>\n\n"; fi; ssh -T -G "$alias" | grep -i -E "^User |^HostName |^Port |^ControlMaster |^ForwardAgent |^LocalForward |^IdentityFile |^RemoteForward |^ProxyCommand |^ProxyJump " | column -t' \
+      --preview-window=down:55%:wrap \
       --expect=alt-enter,enter
     )
 
