@@ -241,7 +241,8 @@ fzf_complete_ssh() {
       return
     fi
 
-    if [ "$(printf "%s\n" "$result" | wc -l)" -eq 1 ]; then
+    # 用户已输入查询时，即使只有 1 个结果也显示 TUI 供确认
+    if [ "$(printf "%s\n" "$result" | wc -l)" -eq 1 ] && [ -z "$fuzzy_input" ]; then
       _set_lbuffer "$result" false
       zle reset-prompt
       # zle redisplay
