@@ -126,3 +126,29 @@ Host Development-Host
     #_Desc For Development
     #_Desc Private network only
 ```
+
+## 更新
+
+Zim 模块不会自动更新。对该模块进行修改并推送到远程仓库后，使用者需要手动在终端中更新：
+
+```zsh
+source ~/.zim/zimfw.zsh update   # 更新所有 Zim 模块
+# 或
+git -C ~/.zim/modules/zsh-ssh pull  # 只更新 zsh-ssh 模块
+```
+
+更新后，需要新开终端标签页或运行 `exec zsh` 以便使新代码生效。当前 shell 进程不会自动重新加载该模块的更改。
+
+## Agent-native Skills
+
+### Start here
+
+- **Zim 模块更新** → 先读 `README.md` 中的 [Skills](#skills) 部分 → 需要执行 SOP 时再读 `.agents/skills/update-zim-module/SKILL.md` → 需要背景证据时再读 `README.md` 中的 [更新](#更新) 部分。
+
+### Skills
+
+- [update-zim-module](.agents/skills/update-zim-module/SKILL.md): Triggered when updating the zsh-ssh module within the Zim Zsh framework.
+
+### Do not read everything
+
+Agents MUST start by reading the repository `README.md` first and follow the links to specific skills. Avoid scanning the entire repository.
