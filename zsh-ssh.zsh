@@ -264,7 +264,7 @@ fzf_complete_ssh() {
       --query=$fuzzy_input \
       --no-separator \
       --bind 'shift-tab:up,tab:down,bspace:backward-delete-char/eof' \
-      --preview 'alias=$(printf "%s" {} | cut -f2); host=$(printf "%s" {} | cut -f3); user=$(printf "%s" {} | cut -f4); desc=$(printf "%s" {} | cut -f5- | tr "\034" "\n"); printf "Desc:\n%s\n\n" "${desc:-<none>}"; printf "Target: ssh %s\nHostName: %s\nUser: %s\n" "$alias" "$host" "$user"; extra=$(ssh -T -G "$alias" | awk '\''BEGIN{IGNORECASE=1} /^(port|identityfile|proxyjump|proxycommand|controlmaster|forwardagent|localforward|remoteforward) / {print}'\'' | column -t 2>/dev/null); if [ -n "$extra" ]; then printf "\nSSH config:\n%s\n" "$extra"; fi' \
+      --preview 'alias=$(printf "%s" {} | cut -f2); host=$(printf "%s" {} | cut -f3); user=$(printf "%s" {} | cut -f4); desc=$(printf "%s" {} | cut -f5- | tr "\034" "\n"); printf "\033[1;36mDesc:\033[0m\n\033[32m%s\033[0m\n\n" "${desc:-<none>}"; printf "\033[1;36mTarget:\033[0m   \033[1;33mssh %s\033[0m\n\033[1;36mHostName:\033[0m \033[37m%s\033[0m\n\033[1;36mUser:\033[0m     \033[37m%s\033[0m\n" "$alias" "$host" "$user"; extra=$(ssh -T -G "$alias" 2>/dev/null | awk '\''BEGIN{IGNORECASE=1} /^(port|identityfile|proxyjump|proxycommand|controlmaster|forwardagent|localforward|remoteforward) / {printf "\033[90m%-16s\033[0m %s\n", $1, $2}'\''); if [ -n "$extra" ]; then printf "\n\033[1;36mSSH config:\033[0m\n%s\n" "$extra"; fi' \
       --preview-window="$fzf_preview_window" \
       --expect=alt-enter,enter
     )
